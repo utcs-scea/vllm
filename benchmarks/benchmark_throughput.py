@@ -149,6 +149,7 @@ def sample_requests(tokenizer: PreTrainedTokenizerBase,
             # Prune too short sequences.
             continue
         if prompt_len > 1024 or prompt_len + output_len > 2048:
+        #if prompt_len > 1024 or output_len > 1024:
             # Prune too long sequences.
             continue
         filtered_dataset.append(
@@ -282,14 +283,19 @@ def run_hf(
     max_prompt_len = 0
     max_output_len = 0
     for i in range(len(requests)):
-        prompt, prompt_len, output_len = requests[i]
+        prompt = requests[i].prompt
+        prompt_len = requests[i].prompt_len
+        output_len = requests[i].expected_output_len
         # Add the prompt to the batch.
         batch.append(prompt)
         max_prompt_len = max(max_prompt_len, prompt_len)
         max_output_len = max(max_output_len, output_len)
+        assert max_prompt_len <= 1024
+        assert max_output_len <= 1024
         if len(batch) < max_batch_size and i != len(requests) - 1:
             # Check if we can add more requests to the batch.
-            _, next_prompt_len, next_output_len = requests[i + 1]
+            next_prompt_len = requests[i + 1].prompt_len
+            next_output_len = requests[i + 1].expected_output_len
             if (max(max_prompt_len, next_prompt_len) +
                     max(max_output_len, next_output_len)) <= 2048:
                 # We can add more requests to the batch.
@@ -298,6 +304,8 @@ def run_hf(
         # Generate the sequences.
         input_ids = tokenizer(batch, return_tensors="pt",
                               padding=True).input_ids
+        # (taeklim): Print input IDs
+        print(input_ids)
         llm_outputs = llm.generate(
             input_ids=input_ids.cuda(),
             do_sample=True,
@@ -510,7 +518,8 @@ if __name__ == "__main__":
             raise ValueError("HF max batch size is required for HF backend.")
         if args.quantization is not None:
             raise ValueError("Quantization is only for vLLM backend.")
-        if args.enable_lora is not None:
+        # (taeklim): modifed for HF 
+        if args.enable_lora is True:
             raise ValueError("LoRA benchmarking is only supported for vLLM"
                              " backend")
     elif args.backend == "mii":

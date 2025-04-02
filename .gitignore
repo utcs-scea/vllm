@@ -1,3 +1,6 @@
+results_peak_usage/
+results_test/
+
 # ctags cscope
 *.files
 *.in.out

@@ -48,6 +48,8 @@ class NaiveBlockAllocator(BlockAllocator):
             refcounter=self._refcounter.as_readonly())
 
         if block_pool is None:
+            print("here block_pool")
+            print(create_block)
             extra_factor = 4
             # Pre-allocate "num_blocks * extra_factor" block objects.
             # The "* extra_factor" is a buffer to allow more block objects

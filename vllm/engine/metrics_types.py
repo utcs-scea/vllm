@@ -85,6 +85,8 @@ class StatLoggerBase(ABC):
         self.last_local_log = time.time()
         self.local_interval = local_interval
         self.spec_decode_metrics: Optional[SpecDecodeWorkerMetrics] = None
+        # (taeklim): Track the peak GPU KV cache usage
+        self.peak_gpu_cache_usage = 0.0
 
     @abstractmethod
     def log(self, stats: Stats) -> None:

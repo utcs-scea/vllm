@@ -233,6 +233,8 @@ class Worker(LocalOrDistributedWorkerBase):
             self.cache_config.gpu_memory_utilization
         available_kv_cache_memory = (memory_for_current_instance -
                                      result.non_kv_cache_memory)
+        print(f"memory_for_current_instance: {memory_for_current_instance}")
+        print(f"non_kv_cache_memory: {result.non_kv_cache_memory}")
 
         # Calculate the number of blocks that can be allocated with the
         # profiled peak memory.

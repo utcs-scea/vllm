@@ -1,5 +1,6 @@
 results_peak_usage/
 results_test/
+results_corun/
 
 # ctags cscope
 *.files

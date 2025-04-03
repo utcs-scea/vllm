@@ -87,7 +87,7 @@ def get_random_lora_request(
     return lora_request, lora_tokenizer_cache[lora_id]
 
 
-def sample_requests(tokenizer: PreTrainedTokenizerBase,
+def profile_dataset(tokenizer: PreTrainedTokenizerBase,
                     args: argparse.Namespace) -> List[SampleRequest]:
 
     dataset_path: str = args.dataset
@@ -104,6 +104,11 @@ def sample_requests(tokenizer: PreTrainedTokenizerBase,
     dataset = [data for data in dataset if len(data["conversations"]) >= 2]
     # Shuffle the dataset.
     random.shuffle(dataset)
+
+    # (taeklim): Count long sequence on dataset
+    long_context_cnt = 0
+    too_long_context_cnt = 0
+    small_context_cnt = 0
 
     # Filter out sequences that are too long or too short
     filtered_dataset: List[SampleRequest] = []
@@ -145,20 +150,110 @@ def sample_requests(tokenizer: PreTrainedTokenizerBase,
         prompt_len = len(prompt_token_ids)
         output_len = len(completion_token_ids
                          ) if fixed_output_len is None else fixed_output_len
+#        if prompt_len > 12064:
+#            too_long_context_cnt += 1
+        if prompt_len > 1024:
+            long_context_cnt += 1
+        else:
+            small_context_cnt += 1
+
         if prompt_len < 4 or output_len < 4:
             # Prune too short sequences.
             continue
         if prompt_len > 1024 or prompt_len + output_len > 2048:
-        #if prompt_len > 1024 or output_len > 1024:
             # Prune too long sequences.
             continue
+
         filtered_dataset.append(
             SampleRequest(prompt=prompt,
                           prompt_len=prompt_len,
                           expected_output_len=output_len,
                           multi_modal_data=multi_modal_data,
                           lora_request=lora_request))
+    print(f"Long context prompt's count {long_context_cnt}")
+    print(f"Too Long context prompt's count {too_long_context_cnt}")
+    print(f"Small context prompt's count {small_context_cnt}")
 
+    return filtered_dataset
+
+def sample_requests(tokenizer: PreTrainedTokenizerBase,
+                    args: argparse.Namespace) -> List[SampleRequest]:
+
+    dataset_path: str = args.dataset
+    num_requests: int = args.num_prompts
+    fixed_output_len: Optional[int] = args.output_len
+    model: str = args.model
+    if fixed_output_len is not None and fixed_output_len < 4:
+        raise ValueError("output_len too small")
+
+    # Load the dataset.
+    with open(dataset_path) as f:
+        dataset = json.load(f)
+    # Filter out the conversations with less than 2 turns.
+    dataset = [data for data in dataset if len(data["conversations"]) >= 2]
+    # Shuffle the dataset.
+    random.shuffle(dataset)
+    print(len(dataset))
+
+    # (taeklim): Count long sequence on dataset
+    long_context_cnt = 0
+    too_long_context_cnt = 0
+    small_context_cnt = 0
+
+    # Filter out sequences that are too long or too short
+    filtered_dataset: List[SampleRequest] = []
+    for data in tqdm(dataset,
+                     total=len(filtered_dataset),
+                     desc="sampling requests"):
+        if len(filtered_dataset) == num_requests:
+            break
+
+        # Only keep the first two turns of each conversation.
+        prompt = data["conversations"][0]["value"]
+        completion = data["conversations"][1]["value"]
+
+        multi_modal_data: Optional[MultiModalDataDict] = None
+        if "image" in data:
+            multi_modal_data = multi_modal_data or {}
+            image_path = data["image"]
+            # TODO(vllm-project/vllm/issues/9778): Support multiple images.
+            assert isinstance(image_path,
+                              str), "Only support single image input"
+            try:
+                multi_modal_data["image"] = Image.open(image_path).convert(
+                    "RGB")
+            except FileNotFoundError:
+                # Ignore datapoint where asset is missing
+                continue
+            prompt = _get_prompt_for_image_model(question=prompt, model=model)
+
+        request_tokenizer = tokenizer
+        lora_request: Optional[LoRARequest] = None
+        if args.enable_lora:
+            lora_request, lora_tokenizer = get_random_lora_request(args)
+            if lora_tokenizer:
+                request_tokenizer = lora_tokenizer
+
+        # Tokenize the prompts and completions.
+        prompt_token_ids = request_tokenizer(prompt).input_ids
+        completion_token_ids = request_tokenizer(completion).input_ids
+        prompt_len = len(prompt_token_ids)
+        output_len = len(completion_token_ids
+                         ) if fixed_output_len is None else fixed_output_len
+
+        if prompt_len < 4 or output_len < 4:
+            # Prune too short sequences.
+            continue
+        if prompt_len > 1024 or prompt_len + output_len > 2048:
+            # Prune too long sequences.
+            continue
+
+        filtered_dataset.append(
+            SampleRequest(prompt=prompt,
+                          prompt_len=prompt_len,
+                          expected_output_len=output_len,
+                          multi_modal_data=multi_modal_data,
+                          lora_request=lora_request))
     return filtered_dataset
 
 

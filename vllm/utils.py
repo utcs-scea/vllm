@@ -2053,7 +2053,11 @@ def memory_profiling(
     result.torch_peak_increase = diff_profile.torch_peak
     result.non_torch_increase = diff_from_create.non_torch_memory
     result.profile_time = diff_profile.timestamp
-    result.non_kv_cache_memory = result.non_torch_increase + result.torch_peak_increase + result.weights_memory  # noqa
+    print(f"non_torch_increase:{result.non_torch_increase}")
+    print(f"torch_peak_increase:{result.torch_peak_increase}")
+    print(f"weights_memory:{result.weights_memory}")
+    #result.non_kv_cache_memory = result.non_torch_increase + result.torch_peak_increase + result.weights_memory  # noqa
+    result.non_kv_cache_memory = result.torch_peak_increase + result.weights_memory  # noqa
 
 
 # Adapted from: https://github.com/sgl-project/sglang/blob/v0.4.1/python/sglang/srt/utils.py#L630 # noqa: E501

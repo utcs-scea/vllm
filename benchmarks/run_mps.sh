@@ -7,31 +7,20 @@ models=('meta-llama/Llama-2-7b-chat-hf' 'meta-llama/Llama-2-13b-hf')
 models=('meta-llama/Llama-2-7b-chat-hf')
 models=('openai-community/gpt2-xl')
 models=('deepseek-ai/deepseek-llm-7b-chat')
-models=('meta-llama/Llama-3.1-8B')
 models=('meta-llama/Llama-2-13b-hf')
 models=('mistralai/Mistral-7B-v0.1')
+models=('meta-llama/Llama-3.1-8B')
 
-gpu_mem=('0.9' '0.85' '0.8' '0.75' '0.7' '0.65' '0.6' '0.5' '0.55')
-gpu_mem=('0.7' '0.65' '0.6' '0.55' '0.5' '0.45' '0.4' '0.35' '0.3')
-gpu_mem=('0.9' '0.85' '0.8' '0.75' '0.7')
-gpu_mem=('0.95' '0.9' '0.85')
-gpu_mem=('0.95' '0.9' '0.85')
-gpu_mem=('0.9' '0.85' '0.8' '0.75' '0.7' '0.65' '0.6' '0.55' '0.5')
-gpu_mem=('0.95' '0.9' '0.85' '0.8' '0.75' '0.7' '0.65' '0.6' '0.55' '0.5' '0.45' '0.4')
-gpu_mem=('0.9' '0.8' '0.7' '0.6' '0.5')
-gpu_mem=('0.9')
-sm_counts=('10' '20' '30' '40' '50' '60' '70' '80' '90' '100')
-sm_counts=('50' '60' '70' '80' '90' '100')
-sm_counts=('10' '20' '30' '40')
+sm_counts=('100')
 
 device_num=0
 
-#output_dir=$(pwd)/results_throughput
-output_dir=$(pwd)/results_mps
-#sudo nvidia-cuda-mps-control -d
+export HF_HOME=/var/local/tkim/huggingface
+output_dir=$(pwd)/results_corun
 
 for model in "${models[@]}"
 do 
+    instance=0
     #for gpu_mem_util in "${gpu_mem[@]}"
     for count in "${sm_counts[@]}"
     do
@@ -42,21 +31,31 @@ do
         echo "Set active percentage as ${count}"
         echo set_default_active_thread_percentage ${count} | nvidia-cuda-mps-control
 
+#        python benchmark_throughput.py \
+#            --backend vllm \
+#            --dataset $(pwd)/ShareGPT_V3_unfiltered_cleaned_split.json \
+#            --model ${model} \
+#            --swap-space 16 \
+#            --preemption_mode swap \
+#            --gpu-memory-utilization 0.45 \
+#            --num-prompts 200 \
+#            --max-model-len 10240 \
+#            --output-json $output_dir/${model}-${count}sm-45mem-corun1.json &
+
         python benchmark_throughput.py \
             --backend vllm \
             --dataset $(pwd)/ShareGPT_V3_unfiltered_cleaned_split.json \
             --model ${model} \
-            --swap-space 0 \
+            --swap-space 16 \
+            --preemption_mode swap \
             --gpu-memory-utilization 0.9 \
-            --num-prompts 1000 \
-            --output-json $output_dir/${model}-${count}-test.json |& tee $output_dir/${model}-${count}.log
-        ((device_num++))
-        echo -n "${count} " >> $output_dir/${model}-peak-cache-usage.log
-        grep "Throughput:" $output_dir/${model}-${count}.log | cut -f2 -d ' '| tr '\n' ' ' >> $output_dir/${model}-peak-cache-usage.log
-        grep -oP " GPU KV cache usage:\s+\K\w+" $output_dir/${model}-${count}.log | sort -n | tail -n 1 >> $output_dir/${model}-peak-cache-usage.log
+            --num-prompts 400 \
+            --max-model-len 10240 \
+            --output-json $output_dir/${model}-${count}sm-90mem-400.json 
 
+        ((device_num++))
         echo "Done running benchmarks... terminating MPS..."
-        sleep 10
+        sleep 5
         sudo sh -c "echo quit | nvidia-cuda-mps-control"
         sleep 5
     done

@@ -12,21 +12,22 @@ models=('meta-llama/Llama-2-13b-hf')
 models=('meta-llama/Llama-3.1-8B')
 models=('mistralai/Mistral-7B-v0.1')
 models=('mistralai/Mistral-7B-v0.1' 'meta-llama/Llama-3.1-8B' 'meta-llama/Llama-2-13b-hf' 'openai-community/gpt2-xl' 'deepseek-ai/deepseek-llm-7b-chat')
-models=('meta-llama/Llama-3.1-8B')
 models=('openai-community/gpt2-xl' 'deepseek-ai/deepseek-llm-7b-chat' 'meta-llama/Llama-2-13b-hf')
 models=('deepseek-ai/deepseek-llm-7b-chat' 'meta-llama/Llama-2-13b-hf')
 models=('meta-llama/Llama-2-13b-hf')
+models=('meta-llama/Llama-3.1-8B')
 
 gpu_mem=('0.95' '0.9' '0.85' '0.8' '0.75' '0.7' '0.65' '0.6' '0.55' '0.5' '0.45' '0.4' '0.35' '0.3' '0.25' '0.2')
 
-gpu_mem=('0.9' '0.8' '0.7' '0.6' '0.5' '0.4' '0.3')
+gpu_mem=('0.9' '0.8' '0.7' '0.6' '0.5')
+gpu_mem=('0.8' '0.7' '0.6' '0.5')
 request_rates=('1' '16' 'inf')
 
-device_num=0
+device_num=1
 
-#output_dir=$(pwd)/results_throughput
 output_dir=$(pwd)/results_serving
-export HF_HOME=/work/10000/tlkim/hf_cache
+#export HF_HOME=/work/10000/tlkim/hf_cache
+export HF_HOME=/var/local/tkim/huggingface
 
 for model in "${models[@]}"
 do 
@@ -34,14 +35,17 @@ do
     do
         for request_rate in "${request_rates[@]}"
         do
+            export CUDA_VISIBLE_DEVICES=$(($device_num%2))
             vllm serve ${model} \
                 --swap-space 0 \
                 --disable-log-requests \
+                --max-model-len 14064 \
                 --gpu-memory-utilization ${gpu_mem_util} |& tee $output_dir/${model}-${gpu_mem_util}-${request_rate}-server.log &
             echo "Waiting for launching server..."
-            sleep 200
+            sleep 120
 
             python3 benchmark_serving.py \
+                --disable-tqdm \
                 --backend vllm \
                 --dataset-name sharegpt \
                 --dataset-path $(pwd)/ShareGPT_V3_unfiltered_cleaned_split.json \
@@ -50,6 +54,7 @@ do
                 --num-prompts 1000 |& tee $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log
             echo -n "${gpu_mem_util} " >> $output_dir/${model}.log
             sleep 5
+            grep "Request throughput" $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
             grep "Mean TTFT" $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
             grep "P99 TTFT"  $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
             grep "Mean TPOT" $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
@@ -60,9 +65,12 @@ do
             pkill vllm
             echo "Killing vllm server..."
             sleep 10
+
+            ((device_num++))
         done
     done
 done
 
+                #--max-model-len 14064 \
             #--max-model-len 22464 \
            # --max-model-len 28240 \

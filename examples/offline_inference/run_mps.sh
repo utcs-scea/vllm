@@ -11,7 +11,8 @@ models=('meta-llama/Llama-2-13b-hf')
 models=('mistralai/Mistral-7B-v0.1')
 models=('meta-llama/Llama-3.1-8B')
 
-sm_counts=('10' '20' '30' '40' '50' '60' '70' '80' '90' '100')
+#sm_counts=('10' '20' '30' '40' '50' '60' '70' '80' '90' '100')
+sm_counts=('100')
 
 
 export HF_HOME=/var/local/tkim/huggingface
@@ -36,10 +37,10 @@ do
             --model ${model} \
             --swap-space 4 \
             --preemption_mode swap \
-            --num-prompts 1000 |& tee $output_dir/${model}-${count}.log
-            echo -n "${count} " >> $output_dir/${model}-throughput.log
-            grep "Throughput:" $output_dir/${model}-${count}.log | cut -f2 -d ' ' >> $output_dir/${model}-throughput.log
-
+            --num-prompts 1000 
+            #--num-prompts 1000 |& tee $output_dir/${model}-${count}.log
+#            echo -n "${count} " >> $output_dir/${model}-throughput.log
+#            grep "Throughput:" $output_dir/${model}-${count}.log | cut -f2 -d ' ' >> $output_dir/${model}-throughput.log
         echo "Done running benchmarks... terminating MPS..."
         sleep 5
         sudo sh -c "echo quit | nvidia-cuda-mps-control"

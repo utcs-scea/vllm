@@ -1,6 +1,7 @@
 results_peak_usage/
 results_test/
 results_corun/
+results_no_mem/
 examples/offline_inference/ShareGPT_V3_unfiltered_cleaned_split.json
 
 # ctags cscope

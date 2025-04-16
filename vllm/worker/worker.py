@@ -289,10 +289,11 @@ class Worker(LocalOrDistributedWorkerBase):
 
         This also warms up the model, which may record CUDA graphs.
         """
-        raise_if_cache_size_invalid(num_gpu_blocks,
-                                    self.cache_config.block_size,
-                                    self.cache_config.is_attention_free,
-                                    self.model_config.max_model_len)
+        # (taeklim): Bypass temporarily
+#        raise_if_cache_size_invalid(num_gpu_blocks,
+#                                    self.cache_config.block_size,
+#                                    self.cache_config.is_attention_free,
+#                                    self.model_config.max_model_len)
 
         self.cache_config.num_gpu_blocks = num_gpu_blocks
         self.cache_config.num_cpu_blocks = num_cpu_blocks

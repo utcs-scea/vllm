@@ -12,18 +12,20 @@ models=('meta-llama/Llama-2-13b-hf')
 models=('meta-llama/Llama-3.1-8B')
 models=('mistralai/Mistral-7B-v0.1')
 models=('mistralai/Mistral-7B-v0.1' 'meta-llama/Llama-3.1-8B' 'meta-llama/Llama-2-13b-hf' 'openai-community/gpt2-xl' 'deepseek-ai/deepseek-llm-7b-chat')
-models=('openai-community/gpt2-xl' 'deepseek-ai/deepseek-llm-7b-chat' 'meta-llama/Llama-2-13b-hf')
 models=('deepseek-ai/deepseek-llm-7b-chat' 'meta-llama/Llama-2-13b-hf')
 models=('meta-llama/Llama-2-13b-hf')
+models=('openai-community/gpt2-xl' 'deepseek-ai/deepseek-llm-7b-chat' 'meta-llama/Llama-2-13b-hf')
 models=('meta-llama/Llama-3.1-8B')
+models=('deepseek-ai/deepseek-llm-7b-chat')
 
 gpu_mem=('0.95' '0.9' '0.85' '0.8' '0.75' '0.7' '0.65' '0.6' '0.55' '0.5' '0.45' '0.4' '0.35' '0.3' '0.25' '0.2')
 
 gpu_mem=('0.9' '0.8' '0.7' '0.6' '0.5')
-gpu_mem=('0.8' '0.7' '0.6' '0.5')
+gpu_mem=('0.9')
 request_rates=('1' '16' 'inf')
+request_rates=('inf')
 
-device_num=1
+device_num=0
 
 output_dir=$(pwd)/results_serving
 #export HF_HOME=/work/10000/tlkim/hf_cache
@@ -39,7 +41,6 @@ do
             vllm serve ${model} \
                 --swap-space 0 \
                 --disable-log-requests \
-                --max-model-len 14064 \
                 --gpu-memory-utilization ${gpu_mem_util} |& tee $output_dir/${model}-${gpu_mem_util}-${request_rate}-server.log &
             echo "Waiting for launching server..."
             sleep 120
@@ -59,6 +60,8 @@ do
             grep "P99 TTFT"  $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
             grep "Mean TPOT" $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
             grep "P99 TPOT"  $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
+            grep "Mean ITL" $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
+            grep "P99 ITL"  $output_dir/${model}-${gpu_mem_util}-${request_rate}-client.log | tr -s ' ' | cut -f4 -d ' ' | tr '\n' ' ' >>  $output_dir/${model}.log
             grep -oP " GPU KV cache usage:\s+\K\w+" $output_dir/${model}-${gpu_mem_util}-${request_rate}-server.log | sort -n | tail -n 1 >> $output_dir/${model}.log
             echo "Done, sleeping 10 seconds for cooling down GPU"
             sleep 10
@@ -70,6 +73,7 @@ do
         done
     done
 done
+
 
                 #--max-model-len 14064 \
             #--max-model-len 22464 \

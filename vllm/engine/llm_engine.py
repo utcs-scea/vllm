@@ -413,6 +413,8 @@ class LLMEngine:
         num_gpu_blocks, num_cpu_blocks = (
             self.model_executor.determine_num_available_blocks())
 
+        # (taeklim)
+        print("_initialize_kv_caches")
         if self.cache_config.num_gpu_blocks_override is not None:
             num_gpu_blocks_override = self.cache_config.num_gpu_blocks_override
             logger.info(

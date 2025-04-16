@@ -91,6 +91,8 @@ class CacheEngine:
                                           src_to_dst)
 
     def swap_out(self, src_to_dst: torch.Tensor) -> None:
+        # (taeklim)
+        #print("Swap out engine")
         for i in range(self.num_attention_layers):
             self.attn_backend.swap_blocks(self.gpu_cache[i], self.cpu_cache[i],
                                           src_to_dst)

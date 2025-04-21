@@ -26,10 +26,9 @@ do
             |& tee $output_dir/${model}-${gpu_mem_util}.log
             #--max-model-len 93000 \
             #--num-gpu-blocks-override 1 \
-        echo "Done, sleeping 30 seconds for cooling down GPU"
-        sleep 30 
+#        echo "Done, sleeping 30 seconds for cooling down GPU"
+#        sleep 30 
     done
 done
 
-            #--max-model-len 22464 \
-           # --max-model-len 28240 \
+echo "Done"

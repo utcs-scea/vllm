@@ -587,7 +587,8 @@ class Scheduler:
                 self._get_num_new_uncached_and_cached_tokens(
                     seq_group, SequenceStatus.RUNNING, enable_chunking,
                     budget))
-            print(f"num_uncached: {num_uncached_new_tokens}")
+            # (taeklim)
+            #print(f"num_uncached: {num_uncached_new_tokens}")
 
             num_running_tokens = num_uncached_new_tokens
             if num_running_tokens == 0:
@@ -1200,7 +1201,8 @@ class Scheduler:
         prefills = self._schedule_prefills(budget,
                                            curr_loras,
                                            enable_chunking=True)
-        print(f"Done _schedule_prefills, {len(prefills.seq_groups)}")
+        # (taeklim)
+        #print(f"Done _schedule_prefills, {len(prefills.seq_groups)}")
 
         assert (budget.num_batched_tokens
                 <= self.scheduler_config.max_num_batched_tokens)

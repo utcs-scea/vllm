@@ -420,6 +420,8 @@ class SelfAttnBlockSpaceManager(BlockSpaceManager):
             List[Tuple[int, int]]: The mapping of swapping block from 
                 GPU to CPU.
         """
+        # (taeklim)
+        #print("block_manager.py swap_out")
         physical_block_id_mapping = []
         for seq in seq_group.get_seqs(status=SequenceStatus.RUNNING):
             blocks = self.block_tables[seq.seq_id].blocks

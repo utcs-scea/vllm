@@ -516,6 +516,14 @@ class Scheduler:
         self._finished_requests_ids = list()
         return finished_requests_ids
 
+    # (taeklim): Swap out all KV cache blocks to host memory after
+    # running all execution
+    #def _swap_out_finished_seq(self, seq_group: SequenceGroup):
+    def _swap_out_finished_seq(self) -> None:
+        running_queue = self.running
+        print(len(running_queue))
+
+
     def _schedule_running(
         self,
         budget: SchedulingBudget,
@@ -579,6 +587,7 @@ class Scheduler:
                 self._get_num_new_uncached_and_cached_tokens(
                     seq_group, SequenceStatus.RUNNING, enable_chunking,
                     budget))
+            print(f"num_uncached: {num_uncached_new_tokens}")
 
             num_running_tokens = num_uncached_new_tokens
             if num_running_tokens == 0:
@@ -936,6 +945,9 @@ class Scheduler:
                 self._get_num_new_uncached_and_cached_tokens(
                     seq_group, SequenceStatus.WAITING, enable_chunking,
                     budget))
+            # (taeklim)
+            print(f"_schedule_prefill get_num_new_uncached: "
+                  f"{num_new_tokens_uncached, num_new_tokens_cached}")
             num_new_tokens = num_new_tokens_uncached + num_new_tokens_cached
 
             if not enable_chunking:
@@ -1188,6 +1200,7 @@ class Scheduler:
         prefills = self._schedule_prefills(budget,
                                            curr_loras,
                                            enable_chunking=True)
+        print(f"Done _schedule_prefills, {len(prefills.seq_groups)}")
 
         assert (budget.num_batched_tokens
                 <= self.scheduler_config.max_num_batched_tokens)
@@ -1589,6 +1602,8 @@ class Scheduler:
         seq_group: SequenceGroup,
         blocks_to_swap_out: List[Tuple[int, int]],
     ) -> None:
+        # (taeklim)
+        #print("_preempt_by_swap")
         self._swap_out(seq_group, blocks_to_swap_out)
 
     def _swap_in(
@@ -1723,6 +1738,11 @@ class Scheduler:
             # guaranteed to be allocated later if the sequence can be allocated.
             num_cached_tokens_seq = self.block_manager.get_num_cached_tokens(
                 seq)
+            # (taeklim)
+#            print(f"seq id: {seq.seq_id}")
+#            print(f"num_cached_tokens_seq: {num_cached_tokens_seq}")
+#            print(f"num_computed_tokens_seq: {num_computed_tokens_seq}")
+#            print(f"all_num_new_tokens_seq: {all_num_new_tokens_seq}")
 
             # Sanity check.
             if num_cached_tokens_seq < num_computed_tokens_seq:

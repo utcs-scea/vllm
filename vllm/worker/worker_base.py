@@ -391,6 +391,8 @@ class LocalOrDistributedWorkerBase(WorkerBase):
         model_input, worker_input, kwargs = inputs
         num_steps = worker_input.num_steps
 
+        # (taeklim)
+        #print("execute_model")
         self.execute_worker(worker_input)
 
         # If there is no input, we don't need to execute the model.

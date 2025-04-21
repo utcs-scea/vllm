@@ -465,6 +465,20 @@ class LLM:
             priority=priority)
 
         outputs = self._run_engine(use_tqdm=use_tqdm)
+
+        # (taeklim)
+        print("Done _run_engine...")
+        self.llm_engine.reset_finished_requests()
+
+#        self._validate_and_add_requests(
+#            prompts=parsed_prompts,
+#            params=sampling_params,
+#            lora_request=lora_request,
+#            prompt_adapter_request=prompt_adapter_request,
+#            guided_options=guided_options_request,
+#            priority=priority)
+#        outputs = self._run_engine(use_tqdm=use_tqdm)
+#        print("done second _run_engine")
         return self.engine_class.validate_outputs(outputs, RequestOutput)
 
     def collective_rpc(self,

@@ -899,6 +899,15 @@ class LLMEngine:
         """Gets the LoRA configuration."""
         return self.lora_config
 
+    # (taeklim)
+    def reset_finished_requests(self) -> int:
+        """Resets finished requests to swapped request"""
+        for scheduler in self.scheduler:
+            done_reqs = scheduler.get_and_reset_finished_requests_ids()
+            scheduler._swap_out_finished_seq()
+        print(f"Done requests:{done_reqs}")
+        return done_reqs
+
     def get_num_unfinished_requests(self) -> int:
         """Gets the number of unfinished requests."""
         return sum(scheduler.get_num_unfinished_seq_groups()

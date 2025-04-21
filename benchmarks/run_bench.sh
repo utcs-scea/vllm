@@ -20,12 +20,9 @@ gpu_mem=('0.9')
 
 device_num=0
 
-#output_dir=$(pwd)/results_throughput
-#output_dir=$(pwd)/results_peak_usage
-export HF_HOME=/var/local/tkim/huggingface
-output_dir=$(pwd)/results_peak_usage
-output_dir=$(pwd)/results_test
 #export HF_HOME=/work/10000/tlkim/hf_cache
+#export HF_HOME=/var/local/tkim/huggingface
+output_dir=$(pwd)/results_test
 
 for model in "${models[@]}"
 do 
@@ -40,7 +37,6 @@ do
             --preemption_mode swap \
             --gpu-memory-utilization ${gpu_mem_util} \
             --num-prompts 1000 \
-            --max-model-len 2000 \
             --output-json $output_dir/${model}-${gpu_mem_util}.json |& tee $output_dir/${model}-${gpu_mem_util}.log
         echo -n "${gpu_mem_util} " >> $output_dir/${model}-peak-cache-usage.log
         grep "Throughput:" $output_dir/${model}-${gpu_mem_util}.log | cut -f2 -d ' ' | tr '\n' ' ' >> $output_dir/${model}-peak-cache-usage.log 

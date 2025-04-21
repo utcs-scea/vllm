@@ -294,6 +294,14 @@ def run_vllm(
                      lora_request=lora_requests,
                      use_tqdm=True)
         end = time.perf_counter()
+        print(f"First e2e time: {end-start}")
+        start = time.perf_counter()
+        llm.generate(prompts,
+                     sampling_params,
+                     lora_request=lora_requests,
+                     use_tqdm=True)
+        end = time.perf_counter()
+        print(f"Second e2e time: {end-start}")
     else:
         assert lora_requests is None, "BeamSearch API does not support LoRA"
         prompts = [request.prompt for request in requests]

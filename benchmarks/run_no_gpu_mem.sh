@@ -17,11 +17,9 @@ models=('meta-llama/Llama-3.1-8B')
 
 device_num=0
 
-#output_dir=$(pwd)/results_throughput
-#output_dir=$(pwd)/results_peak_usage
-export HF_HOME=/var/local/tkim/huggingface
-output_dir=$(pwd)/results_peak_usage
 output_dir=$(pwd)/results_no_mem
+
+#export HF_HOME=/var/local/tkim/huggingface
 #export HF_HOME=/work/10000/tlkim/hf_cache
 
 gpu_mem=('0.7')
@@ -31,7 +29,6 @@ do
     for gpu_mem_util in "${gpu_mem[@]}"
     do
         #export CUDA_VISIBLE_DEVICES=$(($device_num%2))
-        export CUDA_VISIBLE_DEVICES=1
         python3 benchmark_throughput.py \
             --backend vllm \
             --dataset $(pwd)/ShareGPT_V3_unfiltered_cleaned_split.json \
@@ -40,6 +37,8 @@ do
             --preemption_mode swap \
             --gpu-memory-utilization ${gpu_mem_util} \
             --num-prompts 200 \
+            --enable-prefix-caching \
+            --enable-chunked-prefill \
             --max-model-len 93000 \
             --output-json $output_dir/${model}-${gpu_mem_util}.json |& tee $output_dir/${model}-${gpu_mem_util}.log
             #--num-gpu-blocks-override 1 \

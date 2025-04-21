@@ -173,6 +173,8 @@ class PrefixCachingBlockAllocator(BlockAllocator):
 
         cached_block_id = self._cached_blocks.get(block.content_hash, None)
         if cached_block_id is not None:
+            # (taeklim)
+            #print(f"cached_block_id: {cached_block_id}")
             self.metric_data.query(hit=True)
             block.block_id = cached_block_id
             self._incr_refcount_cached_block(block)
